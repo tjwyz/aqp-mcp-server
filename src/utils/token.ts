@@ -129,7 +129,7 @@ export async function getUserToken(config: TransportConfig): Promise<string | nu
 }
 
 export async function getToken(config: TransportConfig): Promise<string | null> {
-  if (config.type == 'stdio') {
+  if (config.type == 'stdio' || config.runInAzure) {
     return getSecreteToken(config);
   } else {
     return getUserToken(config);

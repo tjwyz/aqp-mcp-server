@@ -33,6 +33,7 @@ export function getEnvConfig(serverType: string): Record<string, string> {
     MCP_STDIO_CLIENTID:  process.env.MCP_STDIO_CLIENTID || '',
     MCP_STDIO_TENANTID:  process.env.MCP_STDIO_TENANTID || '',
     MCP_STDIO_CLIENTSECRET:  process.env.MCP_STDIO_CLIENTSECRET || '',
+    RUN_IN_AZURE: process.env.RUN_IN_AZURE || '',
   };
 
   logger.info('Environment config:', { serverType, config: envConfig });

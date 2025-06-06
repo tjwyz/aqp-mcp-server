@@ -1,0 +1,131 @@
+{
+  "wiki_search": {
+    "name": "wiki_search",
+    "description": "It can help with various tasks: Answer tech and design questions based on Search and Distribution, Content Service and verticals, Windows Engineering Wiki. Provide onboarding and coding guidance about XAP, OneService, ObjectStore, Falcon, DLIS, Scope, Cosmos, Peregrine, CoreRanker, WPO. Help DRI colleagues by QnA on wikis.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query for the wiki"
+        }
+      },
+      "required": ["query"]
+    }
+  },
+  "generate_aqp_search_prompt": {
+    "name": "generate_aqp_search_prompt",
+    "description": "必须在调用 'aqp_search' 工具前调用本工具。它会分析用户自然语言输入，提取广告搜索 query、model 和参数，构造成结构化参数供 'aqp_search' 使用。",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "userInput": {
+          "type": "string",
+          "description": "用户输入的自然语言文本"
+        }
+      },
+      "required": ["userInput"]
+    }
+  },
+  "aqp_search": {
+    "name": "aqp_search",
+    "description": "根据结构化的广告查询参数（query, model, params）执行广告搜索。⚠️ 注意：调用本工具之前，必须先调用 'generate_aqp_search_prompt' 工具，从用户的自然语言中提取参数。不要在没有参数准备的情况下调用本工具。",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "广告搜索模式，例如 ta、pa、msan"
+        },
+        "query": {
+          "type": "string",
+          "description": "广告搜索关键词"
+        },
+        "params": {
+          "type": "array",
+          "description": "广告查询参数数组（可选）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "parameter": { "type": "string" },
+              "value": { "type": "string" },
+              "isPostBody": { "type": "boolean" }
+            },
+            "required": ["parameter", "value", "isPostBody"]
+          }
+        }
+      },
+      "required": ["model", "query"]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number",
+          "description": "广告总数（adservice + adsplus 的合并数量）"
+        },
+        "adservice": {
+          "type": "array",
+          "description": "进入 AdService（AH RAP 阶段）但未进入 adsplus 的广告（落选广告）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "adId": { "type": "string" },
+              "advertiserId": { "type": "string" },
+              "campaignId": { "type": "string" },
+              "description": { "type": "string" },
+              "listingId": { "type": "string" },
+              "title": { "type": "string" },
+              "uniqueListingAdId": { "type": "string" },
+              "urlId": { "type": "string" },
+              "Bid": { "type": "number" },
+              "BidStrategy": { "type": "string" },
+              "BiddedKeyword": { "type": "string" },
+              "FinalAdjustedBid": { "type": "number" },
+              "MatchType": { "type": "string" },
+              "Cpc": { "type": "number" },
+              "DestinationUrl": { "type": "string" },
+              "RankScore": { "type": "number" },
+              "RelevanceScore": { "type": "number" },
+              "pClick": { "type": "number" }
+            },
+            "required": ["adId", "title"]
+          }
+        },
+        "adsplus": {
+          "type": "array",
+          "description": "最终在 ARG 阶段（adsplus 阶段）中成功展示的广告列表，来源于 AdService 阶段候选广告的子集",
+          "items": {
+            "type": "object",
+            "properties": {
+              "adId": { "type": "string" },
+              "advertiserId": { "type": "string" },
+              "campaignId": { "type": "string" },
+              "description": { "type": "string" },
+              "listingId": { "type": "string" },
+              "title": { "type": "string" },
+              "uniqueListingAdId": { "type": "string" },
+              "urlId": { "type": "string" },
+              "Bid": { "type": "number" },
+              "BidStrategy": { "type": "string" },
+              "BiddedKeyword": { "type": "string" },
+              "FinalAdjustedBid": { "type": "number" },
+              "MatchType": { "type": "string" },
+              "Cpc": { "type": "number" },
+              "DestinationUrl": { "type": "string" },
+              "RankScore": { "type": "number" },
+              "RelevanceScore": { "type": "number" },
+              "pClick": { "type": "number" }
+            },
+            "required": ["adId", "title"]
+          }
+        },
+        "downloadUrl": {
+          "type": "string",
+          "description": "完整原始 JSON 文件的下载地址"
+        }
+      },
+      "required": ["total", "adservice", "adsplus"]
+    }
+  }
+}

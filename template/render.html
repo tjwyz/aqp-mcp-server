@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <div id="json-viewer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@textea/json-viewer@3"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+
+      if (!id) {
+        document.getElementById('json-viewer').textContent = 'Missing id';
+      } else {
+        fetch(`/api/data?id=${encodeURIComponent(id)}`)
+          .then(res => res.json())
+          .then(json => {
+            new JsonViewer({ value: json }).render('#json-viewer');
+          })
+          .catch(err => {
+            document.getElementById('json-viewer').textContent = 'Error loading data: ' + err;
+          });
+      }
+    </script>
+  </body>
+</html>

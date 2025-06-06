@@ -1,0 +1,41 @@
+{
+    "name": "aqp-tools",
+    "displayName": "AQP Tools",
+    "description": "A AQP mcp servers",
+    "requirements": [
+        {
+            "type": "npm",
+            "name": "aqp-mcp-server",
+            "version": "${latest}",
+            "registry": {
+                "githubRelease":{
+                    "repository": "ai-microsoft/aqp-assistant-mcp-server",
+                    "assetsName":"aqp_mcp_servers_${version}.zip",
+                    "assetName":"aqp-mcp-server-${version}.tgz"
+                }
+            }
+        }  
+    ],
+    "mcpServers": [
+        {
+            "name": "aqp-tools",
+            "description": "Mcp server for AQP assistant",
+            "mode": "stdio",
+            "dependencies": {
+                "requirements":[{
+                    "name": "aqp-mcp-server",
+                    "version": "${latest}"
+                }]
+            },
+            "installation": {
+                "command": "node",
+                "args": [
+                    "${NPMPATH}\\aqp-mcp-server\\build\\servers\\aqp_tools_server.js"
+                ],
+                "env": {
+                }
+            }
+        }
+    ]
+}
+

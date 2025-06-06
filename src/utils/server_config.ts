@@ -26,7 +26,7 @@ export function getEnvConfig(serverType: string): Record<string, string> {
 
   const envConfig = {
     MCP_TRANSPORT_TYPE:  process.env.MCP_TRANSPORT_TYPE || 'sse',
-    MCP_SSE_PORT:  process.env.MCP_SSE_PORT || '44330',
+    MCP_SSE_PORT:  process.env.MCP_SSE_PORT || '3000',
     MCP_SSE_HOST: process.env.MCP_SSE_HOST || '0.0.0.0',
     MCP_SSE_PATH: process.env.MCP_SSE_PATH || '/mcp',
     MCP_SSE_CORS_ORIGIN:  process.env.MCP_SSE_CORS_ORIGIN || '*',

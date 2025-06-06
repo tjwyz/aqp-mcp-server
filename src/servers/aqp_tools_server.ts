@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { BaseServer } from "../base_server.js";
 import { AQPHandler } from "../handlers/aqp_handler.js";
 import { TransportConfig } from "../utils/transport_config.js";
@@ -56,8 +59,10 @@ export class AQPToolsServer extends BaseServer {
   }
 }
 
+const currentFile = fs.realpathSync(path.resolve(fileURLToPath(import.meta.url)));
+const invokedFile = fs.realpathSync(path.resolve(process.argv[1] ?? ''));
 // Create and run server instance if this is the main module
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
+if (process.argv[1] && currentFile === invokedFile) {
   const serverInstance = new AQPToolsServer();
   serverInstance.run().catch(console.error);
 }

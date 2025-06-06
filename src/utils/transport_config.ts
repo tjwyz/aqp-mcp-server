@@ -13,9 +13,16 @@ export interface SSEConfig {
   };
 }
 
+export interface STDIOConfig {
+  clientId: string;
+  tenantId: string;
+  clientSecret: string;
+}
+
 export interface TransportConfig {
   type: 'stdio' | 'sse';
   sseConfig?: SSEConfig;
+  stdioConfig?: STDIOConfig;
 }
 
 // Get configuration for a specific server
@@ -41,6 +48,11 @@ export function getServerConfig(serverType: string): TransportConfig {
       config: config.sseConfig
     });
   } else {
+    config.stdioConfig = {
+      clientId: envConfig.MCP_STDIO_CLIENTID,
+      tenantId: envConfig.MCP_STDIO_TENANTID,
+      clientSecret: envConfig.MCP_STDIO_CLIENTSECRET
+    };
     logger.info('STDIO transport configuration:', {
       serverType
     });

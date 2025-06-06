@@ -54,10 +54,10 @@ async function exchangeCodeForToken(code: string, code_verifier: string): Promis
   }
 }
 
-export async function getSecreteToken(): Promise<string | null> {
-  const tenantId = "";
-  const clientId = "";
-  const clientSecret = "";
+export async function getSecreteToken(config: TransportConfig): Promise<string | null> {
+  const tenantId = config.stdioConfig?.tenantId || "";
+  const clientId = config.stdioConfig?.clientId || "";
+  const clientSecret = config.stdioConfig?.clientSecret || "";
   const scope = `${clientId}/.default`;
   const tokenEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
   const now = Math.floor(Date.now() / 1000);
@@ -87,7 +87,7 @@ export async function getSecreteToken(): Promise<string | null> {
   }
 }
 
-export async function getUserToken(): Promise<string | null> {
+export async function getUserToken(config: TransportConfig): Promise<string | null> {
   const now = Math.floor(Date.now() / 1000);
 
   if (cachedUserToken && tokenExpiresAt > now + 60) {
@@ -130,8 +130,8 @@ export async function getUserToken(): Promise<string | null> {
 
 export async function getToken(config: TransportConfig): Promise<string | null> {
   if (config.type == 'stdio') {
-    return getSecreteToken();
+    return getSecreteToken(config);
   } else {
-    return getUserToken();
+    return getUserToken(config);
   }
 }

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path"
 import axios from "axios";
+import { fileURLToPath } from 'url';
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { logger } from "../utils/logger.js";
 import { AQPpost } from "../utils/aqp.js";
@@ -196,7 +197,9 @@ export class AQPHandler {
     // 保存文件的路径
     const timestamp = Date.now();
     const fileName = `aqp-result-${timestamp}.json`;
-    const dir = path.resolve(process.cwd(), "./aqp-data");
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const dir = path.resolve(__dirname, '../../aqp-data/');
     const filePath = path.join(dir, fileName);
     // const filePath = "http://localhost:3009/data/aqp-result-1717588888.json";
 

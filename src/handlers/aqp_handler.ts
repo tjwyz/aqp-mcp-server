@@ -258,7 +258,7 @@ export class AQPHandler {
         decodedParams: data,
       };
 
-      const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent, null, 2)}`;
+      const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent)}`;
 
       return {
         content: [

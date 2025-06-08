@@ -42,76 +42,20 @@
         }
       },
       "required": ["model", "query"]
-    },
-    "outputSchema": {
+    }
+  },
+  "decode_rlink": {
+    "name": "decode_rlink",
+    "description": "解析 Bing 广告中的 rlink 跳转链接，提取真实落地页、广告信息和用户搜索意图。",
+    "inputSchema": {
       "type": "object",
       "properties": {
-        "total": {
-          "type": "number",
-          "description": "广告总数（adservice + adsplus 的合并数量）"
-        },
-        "adservice": {
-          "type": "array",
-          "description": "进入 AdService（AH RAP 阶段）但未进入 adsplus 的广告（落选广告）",
-          "items": {
-            "type": "object",
-            "properties": {
-              "adId": { "type": "string" },
-              "advertiserId": { "type": "string" },
-              "campaignId": { "type": "string" },
-              "description": { "type": "string" },
-              "listingId": { "type": "string" },
-              "title": { "type": "string" },
-              "uniqueListingAdId": { "type": "string" },
-              "urlId": { "type": "string" },
-              "Bid": { "type": "number" },
-              "BidStrategy": { "type": "string" },
-              "BiddedKeyword": { "type": "string" },
-              "FinalAdjustedBid": { "type": "number" },
-              "MatchType": { "type": "string" },
-              "Cpc": { "type": "number" },
-              "DestinationUrl": { "type": "string" },
-              "RankScore": { "type": "number" },
-              "RelevanceScore": { "type": "number" },
-              "pClick": { "type": "number" }
-            },
-            "required": ["adId", "title"]
-          }
-        },
-        "adsplus": {
-          "type": "array",
-          "description": "最终在 ARG 阶段（adsplus 阶段）中成功展示的广告列表，来源于 AdService 阶段候选广告的子集",
-          "items": {
-            "type": "object",
-            "properties": {
-              "adId": { "type": "string" },
-              "advertiserId": { "type": "string" },
-              "campaignId": { "type": "string" },
-              "description": { "type": "string" },
-              "listingId": { "type": "string" },
-              "title": { "type": "string" },
-              "uniqueListingAdId": { "type": "string" },
-              "urlId": { "type": "string" },
-              "Bid": { "type": "number" },
-              "BidStrategy": { "type": "string" },
-              "BiddedKeyword": { "type": "string" },
-              "FinalAdjustedBid": { "type": "number" },
-              "MatchType": { "type": "string" },
-              "Cpc": { "type": "number" },
-              "DestinationUrl": { "type": "string" },
-              "RankScore": { "type": "number" },
-              "RelevanceScore": { "type": "number" },
-              "pClick": { "type": "number" }
-            },
-            "required": ["adId", "title"]
-          }
-        },
-        "downloadUrl": {
+        "url": {
           "type": "string",
-          "description": "完整原始 JSON 文件的下载地址"
+          "description": "Bing 广告跳转链接，必须是包含 rlink 的完整 URL。"
         }
       },
-      "required": ["total", "adservice", "adsplus"]
+      "required": ["url"]
     }
   }
 }

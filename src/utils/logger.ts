@@ -7,7 +7,7 @@ export enum LogLevel {
   DEBUG = 'DEBUG',
   INFO = 'INFO',
   WARN = 'WARN',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
 export enum EventType {
@@ -19,7 +19,7 @@ export enum EventType {
   SERVER_STARTED = 'server_started',
   SERVER_CONNECTED = 'server_connected',
   SERVER_ERROR = 'server_error',
-  SERVER_SHUTDOWN = 'server_shutdown'
+  SERVER_SHUTDOWN = 'server_shutdown',
 }
 
 export class Logger {
@@ -35,7 +35,7 @@ export class Logger {
    */
   public static setTestEnvironment(isTest: boolean): void {
     Logger.isTestEnvironment = isTest;
-    
+
     // Reset instance if it exists to apply test settings
     if (Logger.instance) {
       Logger.instance.close();
@@ -47,16 +47,18 @@ export class Logger {
     try {
       // Skip initialization for test environments
       if (Logger.isTestEnvironment) {
-        console.log('Logger initialized in test environment - logging to file and AppInsights disabled');
+        console.log(
+          'Logger initialized in test environment - logging to file and AppInsights disabled',
+        );
         // Explicitly make sure client is null in test environment
         this.client = null;
         return;
       }
-      
+
       // Use system temp directory for logs
       const tempDir = os.tmpdir();
       const logsDir = path.join(tempDir, 'mcp-logs');
-      
+
       if (!fs.existsSync(logsDir)) {
         fs.mkdirSync(logsDir, { recursive: true });
       }
@@ -64,7 +66,7 @@ export class Logger {
       const timestamp = new Date().toISOString().split('T')[0];
       this.logFile = path.join(logsDir, `mcp-server-${timestamp}.log`);
       this.writeStream = fs.createWriteStream(this.logFile, { flags: 'a' });
-      
+
       // Initialize Application Insights
       this.initAppInsights();
     } catch (error) {
@@ -78,17 +80,17 @@ export class Logger {
     if (Logger.isTestEnvironment) {
       return;
     }
-    
+
     try {
       // Initialize with connection string
       // this.client = new appInsights.TelemetryClient(this.instrumentationKey);
-      
+
       if (this.client) {
         this.client.config.disableAppInsights = false;
         this.client.config.maxBatchSize = 250;
-        
+
         this.client.context.tags[this.client.context.keys.cloudRole] = 'mcp-server';
-        
+
         this.info('Application Insights initialized');
       }
     } catch (error) {
@@ -115,7 +117,7 @@ export class Logger {
   private log(level: LogLevel, message: string, context?: any) {
     try {
       const formattedMessage = this.formatMessage(level, message, context);
-      
+
       // Skip file logging in test environment or if writeStream is null
       if (!Logger.isTestEnvironment && this.writeStream) {
         this.writeStream.write(formattedMessage + '\n');
@@ -161,7 +163,7 @@ export class Logger {
     if (this.writeStream) {
       this.writeStream.end();
     }
-    
+
     // Flush any pending telemetry and disable AppInsights
     if (this.client) {
       try {
@@ -179,9 +181,15 @@ export class Logger {
   private getUnixUserInfoPath(): string {
     const homeDir = os.homedir();
     if (process.platform === 'darwin') {
-      return path.join(homeDir, 'Library/Application Support/Code/User/globalStorage/microsoftai.ms-roo-cline/settings/user_info.json');
+      return path.join(
+        homeDir,
+        'Library/Application Support/Code/User/globalStorage/microsoftai.ms-roo-cline/settings/user_info.json',
+      );
     } else {
-      return path.join(homeDir, '.config/Code/User/globalStorage/microsoftai.ms-roo-cline/settings/user_info.json');
+      return path.join(
+        homeDir,
+        '.config/Code/User/globalStorage/microsoftai.ms-roo-cline/settings/user_info.json',
+      );
     }
   }
 
@@ -217,29 +225,29 @@ export class Logger {
   public event(eventType: EventType, dimensions: Record<string, any>): void {
     try {
       const username = this.getUsername();
-      
+
       // Add username to dimensions
       const allDimensions = {
         username,
-        ...dimensions
+        ...dimensions,
       };
-      
+
       // Log to file
       this.info(`Event: ${eventType}`, allDimensions);
-      
+
       // Skip AppInsights in test environment
       if (Logger.isTestEnvironment) {
         return;
       }
-      
+
       // Log to Application Insights
       try {
         if (this.client) {
           this.client.trackEvent({
             name: eventType,
-            properties: allDimensions
+            properties: allDimensions,
           });
-          
+
           // Immediately flush to prevent pending operations
           this.client.flush();
         }

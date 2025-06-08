@@ -1,12 +1,12 @@
-import fs from "fs";
-import path from "path"
-import axios from "axios";
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
 import { fileURLToPath } from 'url';
-import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
-import { logger } from "../utils/logger.js";
-import { AQPpost } from "../utils/aqp.js";
-import { getToken } from "../utils/token.js";
-import { TransportConfig } from "../utils/transport_config.js";
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { logger } from '../utils/logger.js';
+import { AQPpost } from '../utils/aqp.js';
+import { getToken } from '../utils/token.js';
+import { TransportConfig } from '../utils/transport_config.js';
 
 type ParamItem = {
   parameter: string;
@@ -19,63 +19,20 @@ type AqpSearchArgs = {
   query: string;
   params?: ParamItem[];
 };
+type RLinkArgs = {
+  rlink: string;
+};
 
 export class AQPHandler {
-  private apiUrl: string;
-
-  constructor() {
-    this.apiUrl = "https://pai-falcon-wus2-cddggkguejf0gqe5.b02.azurefd.net/webxt-llm.wuassistant/invoke/wikisearch/chat/completions?";
-  }
-
-  async handleQueryAQP(args: { query: string }) {
-    try {
-      if (!args.query) {
-        throw new McpError(ErrorCode.InvalidParams, "Query parameter is required.");
-      }
-
-      const response = await axios.post(`${this.apiUrl}`, {
-        messages: [
-                { "role": "user", "content": args.query }
-            ],
-    });
-
-      logger.info("AQP API Response:", response.data);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(response.data, null, 2),
-          },
-        ],
-      };
-    } catch (error: any) {
-      const errorMessage =
-        error instanceof McpError
-          ? error.message
-          : error?.message || String(error);
-
-      logger.error("Error in handleQueryAQP:", { error: errorMessage });
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  }
+  constructor() {}
 
   async generateAqpSearchPrompt(args: { userInput: string }) {
     try {
       if (!args.userInput) {
-        throw new McpError(ErrorCode.InvalidParams, "userInput parameter is required.");
+        throw new McpError(ErrorCode.InvalidParams, 'userInput parameter is required.');
       }
 
-      const paramList =(global as any).paramList;
+      const paramList = (global as any).paramList;
       const paramString = JSON.stringify(paramList, null, 2);
 
       const text = `
@@ -91,23 +48,21 @@ export class AQPHandler {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text,
-          }
-        ]
+          },
+        ],
       };
     } catch (error: any) {
       const errorMessage =
-        error instanceof McpError
-          ? error.message
-          : error?.message || String(error);
+        error instanceof McpError ? error.message : error?.message || String(error);
 
-      logger.error("Error in generateAqpSearchPrompt:", { error: errorMessage });
+      logger.error('Error in generateAqpSearchPrompt:', { error: errorMessage });
 
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: `Error: ${errorMessage}`,
           },
         ],
@@ -123,8 +78,8 @@ export class AQPHandler {
     const queryStringData: Record<string, string> = {};
     const postData: Record<string, string> = {};
 
-    if (query) queryStringList.push("query=" + encodeURIComponent(query));
-    if (model) queryStringList.push("mode=" + encodeURIComponent(model));
+    if (query) queryStringList.push('query=' + encodeURIComponent(query));
+    if (model) queryStringList.push('mode=' + encodeURIComponent(model));
 
     const paramList: ParamItem[] = (global as any).paramList || [];
 
@@ -145,22 +100,24 @@ export class AQPHandler {
     }
 
     const urlParams =
-      `https://adqueryprobet.trafficmanager.net/api/v1/query/textad?` +
-      queryStringList.join("&");
+      `https://adqueryprobet.trafficmanager.net/api/v1/query/textad?` + queryStringList.join('&');
 
     const token = await getToken(config);
     const result = await AQPpost({ url: urlParams, body: postData, token });
 
-    const binglive = result.data.resultSections.find((s: any) => s.key === "binglive");
+    const binglive = result.data.resultSections.find((s: any) => s.key === 'binglive');
 
     const extractSection = (key: string) =>
       binglive?.sections.find((s: any) => s.key === key)?.resultAdList ?? [];
 
     const filter = (item: any) => {
-      const overviewTab = item.subTabs.find((t: any) => t.key === "overview");
-      const overview = overviewTab?.components.find((c: any) => c.key === "overview")?.contentData?.[0];
-      const adservice = overviewTab?.components.find((c: any) => c.key === "adservice")?.contentData?.[0];
-      const adsplus = overviewTab?.components.find((c: any) => c.key === "adsplus")?.contentData?.[0];
+      const overviewTab = item.subTabs.find((t: any) => t.key === 'overview');
+      const overview = overviewTab?.components.find((c: any) => c.key === 'overview')
+        ?.contentData?.[0];
+      const adservice = overviewTab?.components.find((c: any) => c.key === 'adservice')
+        ?.contentData?.[0];
+      const adsplus = overviewTab?.components.find((c: any) => c.key === 'adsplus')
+        ?.contentData?.[0];
       let ret = {
         adId: item.adCopy.adId,
         advertiserId: item.adCopy.advertiserId,
@@ -186,13 +143,13 @@ export class AQPHandler {
           ...ret,
           Cpc: adsplus.Cpc,
           DestinationUrl: adservice.DestinationUrl,
-        }
+        };
       }
       return ret;
     };
 
-    const adsplus = extractSection("argads").map(filter);
-    const adservice = extractSection("adserviceresult").map(filter);
+    const adsplus = extractSection('argads').map(filter);
+    const adservice = extractSection('adserviceresult').map(filter);
 
     // 保存文件的路径
     const timestamp = Date.now();
@@ -201,14 +158,8 @@ export class AQPHandler {
     const __dirname = path.dirname(__filename);
     const dir = path.resolve(__dirname, '../../aqp-data/');
     const filePath = path.join(dir, fileName);
-    // const filePath = "http://localhost:3009/data/aqp-result-1717588888.json";
-
-    // ✅ 文件路径提示内容
-    const readablePathHint = `💾 原始 JSON 数据已保存到本地：${filePath}，如需查看细节请打开该文件。`;
 
     const prompt = `
-    <details>
-      <summary>
       你将收到一份广告分析数据，结构如下：
       1. total: 总广告数（ adservice + adsplus 的合计）。
       2. adserviceLen: adservice中广告的数量
@@ -230,8 +181,6 @@ export class AQPHandler {
       2️⃣ 精选广告：从 adsplus 中挑选 3 条广告，展示其 title、Cpc、pClick、RankScore；
 
       注意：请勿复述全部 JSON 数据，重点突出结构清晰和核心指标。
-      </summary>
-    </details>
     `.trim();
 
     const structuredContent = {
@@ -240,20 +189,90 @@ export class AQPHandler {
       adsplusLen: adsplus.length,
       adservice,
       adsplus,
-      downloadUrl: `http://localhost:44330/json?id=${timestamp}`,
+      downloadUrl: `http://aqpmcp.eastus.cloudapp.azure.com:3000/json?id=${timestamp}`,
     };
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(structuredContent, null, 2), "utf-8");
+    fs.writeFileSync(filePath, JSON.stringify(structuredContent, null, 2), 'utf-8');
 
     const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent)}`;
 
     return {
       content: [
         {
-          type: "text",
+          type: 'text',
           text: inputForLLM,
         },
       ],
     };
+  }
+
+  async decodeRlink(args: { url: string }, config: TransportConfig) {
+    try {
+      const urlParams = `https://adqueryprobet.trafficmanager.net/api/v1/tools/UrlDecryption`;
+      const token = await getToken(config);
+      const postData = {
+        type: 'RLink',
+        url: args.url,
+      };
+      const result = await AQPpost({ url: urlParams, body: postData, token });
+
+      const data = result?.data?.DecodedResult;
+      if (!data || !data.DestinationUrlDecoded) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'Invalid decode result or missing DestinationUrlDecoded',
+        );
+      }
+
+      const prompt = `
+        你将收到一份 Bing RLink 解码结果，结构如下：
+
+        - originalUrl: 原始 Bing 广告跳转链接；
+        - destinationUrl: 原始 rlink 解码后的 URL（未转义）；
+        - campaignId / adId / listingId: 广告投放相关 ID；
+        - cpc: 点击成本（高精度）；
+        - advertiserId: 广告主 ID；
+        - domainType: 广告类型（例如 1 代表页面跳转类）；
+        - searchQuery: 用户搜索的关键词；
+        - decodedParams: 解析出的参数全集；
+
+        ---
+
+        📌 **你的任务：**
+
+        1️⃣ 判断落地页是否为合理电商页或诱导页；
+        2️⃣ 提取 search_query 与落地页之间的相关性；
+        3️⃣ 简要描述广告所属行业（如电商、下载类、导流页等）；
+      `.trim();
+
+      const structuredContent = {
+        originalUrl: args.url,
+        destinationUrl: data.DestinationUrlDecoded,
+        campaignId: data.CampaignId,
+        adId: data.AdId,
+        listingId: data.ListingId,
+        advertiserId: data.AdvertiserId,
+        cpc: data.CpcHighPrecision,
+        domainType: data.DomainType,
+        searchQuery: data._x_ns_query || null, // 若想抽出 query 可加
+        decodedParams: data,
+      };
+
+      const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent, null, 2)}`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: inputForLLM,
+          },
+        ],
+      };
+    } catch (err) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Failed to decode rlink: ' + (err as Error).message,
+      );
+    }
   }
 }

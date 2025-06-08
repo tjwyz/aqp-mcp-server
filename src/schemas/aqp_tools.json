@@ -1,18 +1,4 @@
 {
-  "wiki_search": {
-    "name": "wiki_search",
-    "description": "It can help with various tasks: Answer tech and design questions based on Search and Distribution, Content Service and verticals, Windows Engineering Wiki. Provide onboarding and coding guidance about XAP, OneService, ObjectStore, Falcon, DLIS, Scope, Cosmos, Peregrine, CoreRanker, WPO. Help DRI colleagues by QnA on wikis.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "query": {
-          "type": "string",
-          "description": "Search query for the wiki"
-        }
-      },
-      "required": ["query"]
-    }
-  },
   "generate_aqp_search_prompt": {
     "name": "generate_aqp_search_prompt",
     "description": "必须在调用 'aqp_search' 工具前调用本工具。它会分析用户自然语言输入，提取广告搜索 query、model 和参数，构造成结构化参数供 'aqp_search' 使用。",

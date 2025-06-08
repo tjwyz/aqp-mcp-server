@@ -38,7 +38,7 @@ export function getServerConfig(serverType: string): TransportConfig {
   config.stdioConfig = {
     clientId: envConfig.MCP_STDIO_CLIENTID,
     tenantId: envConfig.MCP_STDIO_TENANTID,
-    clientSecret: envConfig.MCP_STDIO_CLIENTSECRET
+    clientSecret: envConfig.MCP_STDIO_CLIENTSECRET,
   };
 
   config.sseConfig = {
@@ -47,18 +47,18 @@ export function getServerConfig(serverType: string): TransportConfig {
     path: envConfig.MCP_SSE_PATH,
     cors: {
       origin: envConfig.MCP_SSE_CORS_ORIGIN,
-      methods: ['GET', 'POST']
-    }
+      methods: ['GET', 'POST'],
+    },
   };
 
   if (config.type === 'sse') {
     logger.info('SSE transport configuration:', {
       serverType,
-      config: config.sseConfig
+      config: config.sseConfig,
     });
   } else {
     logger.info('STDIO transport configuration:', {
-      serverType
+      serverType,
     });
   }
 

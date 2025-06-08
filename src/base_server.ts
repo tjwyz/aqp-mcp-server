@@ -1,15 +1,12 @@
 #!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { TransportConfig, getServerConfig } from "./utils/transport_config.js";
-import { TransportFactory } from "./utils/transport_factory.js";
-import { TransportManager } from "./utils/transport_manager.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
-import { logger, EventType } from "./utils/logger.js";
-import { fetchParams } from "./utils/aqp.js";
-import { getToken } from "./utils/token.js";
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { TransportConfig, getServerConfig } from './utils/transport_config.js';
+import { TransportFactory } from './utils/transport_factory.js';
+import { TransportManager } from './utils/transport_manager.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { logger, EventType } from './utils/logger.js';
+import { fetchParams } from './utils/aqp.js';
+import { getToken } from './utils/token.js';
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -28,12 +25,12 @@ export abstract class BaseServer {
     name: string,
     tools: Record<string, any>,
     serverType: string,
-    config?: TransportConfig
+    config?: TransportConfig,
   ) {
     this.name = name;
     this.tools = tools;
     this.serverName = name;
-    this.version = this.loadPackageVersion() || "0.1.5";
+    this.version = this.loadPackageVersion() || '0.1.5';
     this.additionalDimensions = {};
     this.config = config || getServerConfig(serverType);
     this.transportManager = new TransportManager();
@@ -47,21 +44,21 @@ export abstract class BaseServer {
         capabilities: {
           tools: this.tools,
         },
-      }
+      },
     );
 
     // Error handling
     this.server.onerror = (error) => {
-      logger.error("[MCP Error]", error);
+      logger.error('[MCP Error]', error);
       logger.event(EventType.SERVER_ERROR, {
         serverName: this.serverName,
         version: this.version,
-        error: error.toString()
+        error: error.toString(),
       });
     };
 
-    process.on("SIGINT", async () => {
-      logger.info("Shutting down server...");
+    process.on('SIGINT', async () => {
+      logger.info('Shutting down server...');
       logger.event(EventType.SERVER_SHUTDOWN, {
         serverName: this.serverName,
         version: this.version,
@@ -76,49 +73,42 @@ export abstract class BaseServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: Object.values(this.tools),
     }));
-    logger.info("Tools registered:", Object.keys(this.tools));
+    logger.info('Tools registered:', Object.keys(this.tools));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
       // Add timing and event logging
       const startTime = Date.now();
-      let status = "success";
+      let status = 'success';
       let result;
 
       try {
         result = await this.handleToolCall(name, args, this.config);
       } catch (error) {
-        status = "failure";
+        status = 'failure';
         throw error;
       } finally {
         const endTime = Date.now();
         const duration = endTime - startTime;
 
         // Log the event with all dimensions
-        logger.event(
-          EventType.TOOL_INVOKED,
-          {
-            name,
-            duration,
-            status,
-            args: JSON.stringify(args),
-            serverName: this.serverName,
-            version: this.version,
-            ...this.additionalDimensions
-          }
-        );
+        logger.event(EventType.TOOL_INVOKED, {
+          name,
+          duration,
+          status,
+          args: JSON.stringify(args),
+          serverName: this.serverName,
+          version: this.version,
+          ...this.additionalDimensions,
+        });
       }
 
       return result;
     });
   }
 
-  protected abstract handleToolCall(
-    name: string,
-    args: any,
-    config: TransportConfig,
-  ): Promise<any>;
+  protected abstract handleToolCall(name: string, args: any, config: TransportConfig): Promise<any>;
 
   protected abstract initializeHandlers(): Promise<void>;
 
@@ -128,18 +118,18 @@ export abstract class BaseServer {
       serverName: this.serverName,
       version: this.version,
       toolCount: Object.keys(this.tools).length,
-      transportType: this.config.type
+      transportType: this.config.type,
     });
 
     const startTime = Date.now();
 
     try {
       // Initialize all handlers before connecting
-      logger.info("Initializing handlers...");
+      logger.info('Initializing handlers...');
       await this.initializeHandlers();
-      logger.info("Handlers initialized successfully");
+      logger.info('Handlers initialized successfully');
 
-      logger.info("Setting up transport with config:", this.config);
+      logger.info('Setting up transport with config:', this.config);
 
       if (this.config.type === 'sse') {
         if (!this.config.sseConfig) {
@@ -152,47 +142,47 @@ export abstract class BaseServer {
         // fetch token
         const token = await getToken(this.config);
         if (!token) {
-          throw("token 获取失败");
+          throw 'token 获取失败';
         }
         await fetchParams({ token });
 
         // Set up SSE server
-        logger.info("Setting up SSE server...");
+        logger.info('Setting up SSE server...');
         TransportFactory.setupExpressServer(
           express,
           this.server,
           this.config.sseConfig,
-          this.transportManager
+          this.transportManager,
         );
 
         logger.event(EventType.SERVER_CONNECTED, {
           serverName: this.serverName,
           version: this.version,
           totalStartupTime: Date.now() - startTime,
-          transportType: 'sse'
+          transportType: 'sse',
         });
 
         logger.info(`${this.name} MCP server running on SSE (port ${this.config.sseConfig.port})`);
       } else {
         // Use stdio transport
-        logger.info("Creating stdio transport...");
+        logger.info('Creating stdio transport...');
         const transport = TransportFactory.createStdioTransport();
-        
+
         const token = await getToken(this.config);
         if (!token) {
-          throw("token 获取失败");
+          throw 'token 获取失败';
         }
         await fetchParams({ token });
 
         // Connect to transport
-        logger.info("Connecting to transport...");
+        logger.info('Connecting to transport...');
         await this.server.connect(transport);
 
         logger.event(EventType.SERVER_CONNECTED, {
           serverName: this.serverName,
           version: this.version,
           totalStartupTime: Date.now() - startTime,
-          transportType: 'stdio'
+          transportType: 'stdio',
         });
 
         logger.info(`${this.name} MCP server running on stdio`);
@@ -205,7 +195,7 @@ export abstract class BaseServer {
         version: this.version,
         error: error instanceof Error ? error.message : String(error),
         phase: 'startup',
-        transportType: this.config.type
+        transportType: this.config.type,
       });
 
       throw error;
@@ -223,9 +213,10 @@ export abstract class BaseServer {
         const currentPathname = new URL(currentFileUrl).pathname;
 
         // Fix Windows paths by removing leading slash from pathname
-        const currentFilePath = process.platform === 'win32'
-          ? currentPathname.substring(1)  // Remove leading slash on Windows
-          : currentPathname;
+        const currentFilePath =
+          process.platform === 'win32'
+            ? currentPathname.substring(1) // Remove leading slash on Windows
+            : currentPathname;
 
         const dirPath = path.dirname(currentFilePath);
 

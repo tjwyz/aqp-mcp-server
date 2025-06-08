@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse } from 'axios';
 
 interface RequestOptions {
   url: string;
@@ -34,7 +34,11 @@ export async function AQPget({ url, token }: RequestOptions): Promise<AxiosRespo
   });
 }
 
-export async function AQPpost({ url, body, token }: PostRequestOptions): Promise<AxiosResponse<any>> {
+export async function AQPpost({
+  url,
+  body,
+  token,
+}: PostRequestOptions): Promise<AxiosResponse<any>> {
   return axios.post(url, body, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -43,7 +47,7 @@ export async function AQPpost({ url, body, token }: PostRequestOptions): Promise
 }
 
 export const fetchParams = async ({ token }: FetchParamsInput): Promise<void> => {
-  const url = "https://adqueryprobet.trafficmanager.net/api/v1/context/searchcontext?mode=ta";
+  const url = 'https://adqueryprobet.trafficmanager.net/api/v1/context/searchcontext?mode=ta';
   const response = await AQPget({ url, token });
 
   const data = response.data as SearchContextResponse;

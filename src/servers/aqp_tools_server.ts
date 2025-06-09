@@ -46,7 +46,7 @@ export class AQPToolsServer extends BaseServer {
 
         return await this.aqpHandler.aqpSearch(args, config);
       }
-      case 'decode_rlink': {
+      case 'decode_bingads_url': {
         if (!args || typeof args.url !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, "Missing required 'url' parameter");
         }

@@ -44,15 +44,15 @@
       "required": ["model", "query"]
     }
   },
-  "decode_rlink": {
-    "name": "decode_rlink",
-    "description": "解析 Bing 广告中的 rlink 跳转链接，提取真实落地页、广告信息和用户搜索意图。",
+  "decode_bingads_url": {
+    "name": "decode_bingads_url",
+    "description": "Decodes a full Bing Ads redirect URL (typically an rlink) to extract the final landing page, ad metadata, and user search intent.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "url": {
           "type": "string",
-          "description": "Bing 广告跳转链接，必须是包含 rlink 的完整 URL。"
+          "description": "A full Bing Ads redirect URL"
         }
       },
       "required": ["url"]

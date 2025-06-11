@@ -52,7 +52,7 @@
       "properties": {
         "expression": {
           "type": "string",
-          "description": "A JavaScript arrow function expression to transform an ad item, e.g., '(ad) => ({ adid: ad.adid, hastype2: ad.pclickscore?.some(p => p.pclickscoretype == 2) })'"
+          "description": "A JavaScript arrow function expression to transform an ad item, e.g., (ad) => ({ adid: ad.adid, hastype2: ad.pclickscore?.some(p => p.pclickscoretype == '2') }, Note: All fields are strings, use '==' with quotes.)"
         }
       },
       "required": ["expression"]

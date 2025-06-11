@@ -1,22 +1,75 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js" type="module"></script>
+    <style>
+      body { font-family: monospace; background: #1e1e1e; color: #eee; padding: 1rem; }
+      .error { color: red; }
+      button {
+        margin-bottom: 1rem;
+        padding: 0.5em 1em;
+        background: #444;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #666;
+      }
+    </style>
+  </head>
   <body>
-    <div id="json-viewer"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@textea/json-viewer@3"></script>
-    <script>
+    <div id="app">
+      <button id="download">📥 Download JSON</button>
+      <json-viewer id="viewer"></json-viewer>
+      <div id="fallback" class="error" hidden></div>
+    </div>
+
+    <script type="module">
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
 
+      const viewer = document.getElementById('viewer');
+      const fallback = document.getElementById('fallback');
+      const downloadBtn = document.getElementById('download');
+
+      // 下载按钮逻辑
+      downloadBtn.addEventListener('click', () => {
+        if (!viewer.data) {
+          alert('没有数据可以下载');
+          return;
+        }
+
+        const jsonStr = JSON.stringify(viewer.data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `data-${id || 'export'}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
       if (!id) {
-        document.getElementById('json-viewer').textContent = 'Missing id';
+        fallback.textContent = '❌ Missing id in URL';
+        fallback.hidden = false;
+        viewer.hidden = true;
+        downloadBtn.hidden = true;
       } else {
         fetch(`/api/data?id=${encodeURIComponent(id)}`)
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) throw new Error(res.statusText);
+            return res.json();
+          })
           .then(json => {
-            new JsonViewer({ value: json }).render('#json-viewer');
+            viewer.data = json;
+            viewer.expandAll();
           })
           .catch(err => {
-            document.getElementById('json-viewer').textContent = 'Error loading data: ' + err;
+            fallback.textContent = '❌ Error loading data: ' + err.message;
+            fallback.hidden = false;
+            viewer.hidden = true;
+            downloadBtn.hidden = true;
           });
       }
     </script>

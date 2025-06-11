@@ -76,7 +76,7 @@ export abstract class BaseServer {
     logger.info('Tools registered:', Object.keys(this.tools));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name, arguments: args, sessionId } = request.params;
 
       // Add timing and event logging
       const startTime = Date.now();
@@ -84,7 +84,7 @@ export abstract class BaseServer {
       let result;
 
       try {
-        result = await this.handleToolCall(name, args, this.config);
+        result = await this.handleToolCall(name, args, this.config, sessionId as string);
       } catch (error) {
         status = 'failure';
         throw error;
@@ -108,7 +108,12 @@ export abstract class BaseServer {
     });
   }
 
-  protected abstract handleToolCall(name: string, args: any, config: TransportConfig): Promise<any>;
+  protected abstract handleToolCall(
+    name: string,
+    args: any,
+    config: TransportConfig,
+    sessionId: string,
+  ): Promise<any>;
 
   protected abstract initializeHandlers(): Promise<void>;
 

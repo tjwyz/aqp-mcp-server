@@ -1,11 +1,14 @@
 import fs from 'fs';
+import { promises as fsPromise } from 'fs';
 import path from 'path';
 import axios from 'axios';
+import vm from 'node:vm';
 import { fileURLToPath } from 'url';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../utils/logger.js';
 import { AQPpost } from '../utils/aqp.js';
 import { getToken } from '../utils/token.js';
+import { setAqpCache, getAqpCache } from '../utils/aqp_cache.js';
 import { TransportConfig } from '../utils/transport_config.js';
 
 type ParamItem = {
@@ -33,23 +36,20 @@ export class AQPHandler {
       }
 
       const paramList = (global as any).paramList;
-      const paramString = JSON.stringify(paramList, null, 2);
+      const paramString = JSON.stringify(paramList);
 
       const text = `
-        以下是当前支持的广告查询参数：
-
-        ${paramString}
-
-        你可以基于用户输入的自然语言内容，从中提取出相关参数，并在需要时调用 aqp_search 工具。
-      `.trim();
-
-      // logger.info("AQP generateAqpSearchPrompt Response:", true);
+        You can extract relevant parameters from the user's natural language input and invoke the aqp_search tool when needed.
+        The following are the currently supported ad query parameters:
+      `
+        .trim()
+        .replace(/\s+/g, ' ');
 
       return {
         content: [
           {
             type: 'text',
-            text,
+            text: `${text}\n\n${JSON.stringify(paramString)}`,
           },
         ],
       };
@@ -71,7 +71,7 @@ export class AQPHandler {
     }
   }
 
-  async aqpSearch(args: AqpSearchArgs, config: TransportConfig) {
+  async aqpSearch(args: AqpSearchArgs, config: TransportConfig, sessionId: string) {
     const { model, query, params = [] } = args;
 
     const queryStringList: string[] = [];
@@ -118,83 +118,175 @@ export class AQPHandler {
         ?.contentData?.[0];
       const adsplus = overviewTab?.components.find((c: any) => c.key === 'adsplus')
         ?.contentData?.[0];
+      const depclickTab = item.subTabs.find((t: any) => t.key === 'depclick');
+      function toLowerCaseKeys(obj: Record<string, any>): Record<string, any> {
+        const newObj: Record<string, any> = {};
+        for (const key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            newObj[key.toLowerCase()] = obj[key];
+          }
+        }
+        return newObj;
+      }
+      const pClickScore = depclickTab?.components
+        .find((c: any) => c.key === 'pclickscore')
+        ?.contentData.map(toLowerCaseKeys);
       let ret = {
-        adId: item.adCopy.adId,
-        advertiserId: item.adCopy.advertiserId,
-        campaignId: item.adCopy.campaignId,
+        adid: item.adCopy.adId,
+        advertiserid: item.adCopy.advertiserId,
+        campaignid: item.adCopy.campaignId,
         description: item.adCopy.description,
-        listingId: item.adCopy.listingId,
+        listingid: item.adCopy.listingId,
         title: item.adCopy.title,
-        uniqueListingAdId: item.adCopy.uniqueListingAdId,
-        urlId: item.adCopy.urlId,
-        Bid: overview.Bid,
-        BidStrategy: overview.BidStrategy,
-        BiddedKeyword: overview.BiddedKeyword,
-        FinalAdjustedBid: overview.FinalAdjustedBid,
-        MatchType: overview.MatchType,
-        Cpc: adservice.Cpc,
-        DestinationUrl: adservice.DestinationUrl,
-        RankScore: adservice.RankScore,
-        RelevanceScore: adservice.RelevanceScore,
-        pClick: adservice.pClick,
+        uniquelistingadid: item.adCopy.uniqueListingAdId,
+        urlid: item.adCopy.urlId,
+        bid: overview?.Bid,
+        bidstrategy: overview?.BidStrategy,
+        biddedkeyword: overview?.BiddedKeyword,
+        finaladjustedbid: overview?.FinalAdjustedBid,
+        matchtype: overview?.MatchType,
+        cpc: adservice?.Cpc,
+        destinationurl: adservice?.DestinationUrl,
+        rankscore: adservice?.RankScore,
+        relevancescore: adservice?.RelevanceScore,
+        pclick: adservice?.pClick,
+        pclickscore: pClickScore,
       };
+
       if (adsplus) {
         ret = {
           ...ret,
-          Cpc: adsplus.Cpc,
-          DestinationUrl: adservice.DestinationUrl,
+          cpc: adsplus.Cpc, // 注意：仍然保留 destinationurl 用 adservice 的
         };
       }
+
       return ret;
     };
 
     const adsplus = extractSection('argads').map(filter);
     const adservice = extractSection('adserviceresult').map(filter);
 
-    // 保存文件的路径
-    const timestamp = Date.now();
-    const fileName = `aqp-result-${timestamp}.json`;
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const dir = path.resolve(__dirname, '../../aqp-data/');
-    const filePath = path.join(dir, fileName);
+    let fileToWrite = {
+      adsplus,
+      adservice,
+    };
+    // save
+    setAqpCache(sessionId, fileToWrite);
 
     const prompt = `
-      你将收到一份广告分析数据，结构如下：
-      1. total: 总广告数（ adservice + adsplus 的合计）。
-      2. adserviceLen: adservice中广告的数量
-      3. adsplusLen: adsplus中广告的数量
-      4. adservice: 广告服务（AdService）阶段中筛选出的广告，这些广告虽然通过了初步筛选，但**最终未在 ARG 阶段展示**。
-      5. adsplus: 最终在 ARG 阶段成功展示的广告列表，**是 adservice 的子集**，即从候选广告中“脱颖而出”的展示广告。
-      6. downloadUrl: 完整 JSON 文件的下载链接，供深入查看数据结构使用。
+      You will receive metadata of an ad search result.
 
-      每条广告都包含关键字段，如：
-      - 基本信息：title、description、advertiserId、campaignId
-      - 关键词出价：Bid、 FinalAdjustedBid、 BidStrategy、MatchType、BiddedKeyword
-      - 排名与点击预测：RankScore、RelevanceScore、pClick、Cpc
+      🔢 Stats:
+      - total: Total number of ads
+      - adservicelen: Ads filtered by AdService (not shown in ARG)
+      - adspluslen: Final ads shown by ARG
+      - schema: Example fields from one ad
+      - downloadurl: Link to full data
 
-      ---
+      📌 Notes:
+      - This is just metadata. You don’t have the full ad list yet.
+      - Don’t analyze individual ads at this stage.
+      - If the user asks for specific fields (e.g. adid, cpc, pclickscore), call the tool "filter_and_project_ads" with an expression like: "(ad) => ({ adid: ad.adid, cpc: ad.cpc })"
 
-      📌 **你的任务：**
+      Wait for the actual field extraction before summarizing or visualizing.
+    `
+      .trim()
+      .replace(/\s+/g, ' ');
 
-      1️⃣ 总览：总结本次广告分布与投放结果；
-      2️⃣ 精选广告：从 adsplus 中挑选 3 条广告，展示其 title、Cpc、pClick、RankScore；
-
-      注意：请勿复述全部 JSON 数据，重点突出结构清晰和核心指标。
-    `.trim();
-
+    let schema = JSON.parse(JSON.stringify(adservice[0]));
+    schema.pclickscore = schema.pclickscore?.slice(0, 3) || [];
     const structuredContent = {
       total: adsplus.length + adservice.length,
-      adserviceLen: adservice.length,
-      adsplusLen: adsplus.length,
-      adservice,
-      adsplus,
-      downloadUrl: `http://aqpmcp.eastus.cloudapp.azure.com:3000/json?id=${timestamp}`,
+      adservicelen: adservice.length,
+      adspluslen: adsplus.length,
+      schema,
+      downloadurl: `http://aqpmcp.eastus.cloudapp.azure.com:3000/json?id=${sessionId}`,
     };
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(structuredContent, null, 2), 'utf-8');
 
     const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent)}`;
+
+    if (!adsplus.length && !adservice.length) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'No ad data was returned from the server. Please try again with different query or model.',
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: inputForLLM,
+        },
+      ],
+    };
+  }
+
+  async filterAndProjectAds(
+    args: { expression: string },
+    config: TransportConfig,
+    sessionId: string,
+  ) {
+    const { expression } = args;
+
+    const data = getAqpCache(sessionId);
+    if (!data) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ No cached ad data found for session "${sessionId}". Please call "aqp_search" first.`,
+          },
+        ],
+      };
+    }
+
+    let transformFn: (ad: any) => any;
+    try {
+      const context = vm.createContext({});
+      transformFn = vm.runInContext(`(${expression})`, context);
+    } catch (e: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Invalid expression: ${e.message}`,
+          },
+        ],
+      };
+    }
+
+    const results: any = { adservice: [], adsplus: [] };
+
+    for (const [index, ad] of data.adservice.entries()) {
+      try {
+        results.adservice.push(transformFn(ad));
+      } catch (e: any) {
+        results.adservice.push({
+          id: ad.adid ?? `index_${index}`,
+          error: `❌ Failed to process ad: ${e.message}`,
+        });
+      }
+    }
+
+    for (const [index, ad] of data.adsplus.entries()) {
+      try {
+        results.adsplus.push(transformFn(ad));
+      } catch (e: any) {
+        results.adsplus.push({
+          id: ad.adid ?? `index_${index}`,
+          error: `❌ Failed to process ad: ${e.message}`,
+        });
+      }
+    }
+
+    const summary = `✅ Successfully transformed ${results.adservice.length} AdService ads and ${results.adsplus.length} AdsPlus ads.`;
+
+    const inputForLLM = `${summary}\n\nJSON:\n${JSON.stringify(results)}`;
 
     return {
       content: [
@@ -225,25 +317,27 @@ export class AQPHandler {
       }
 
       const prompt = `
-        你将收到一份 Bing RLink 解码结果，结构如下：
+        You will receive a decoded JSON result from a Bing RLink. The structure is as follows:
 
-        - originalUrl: 原始 Bing 广告跳转链接；
-        - destinationUrl: 原始 rlink 解码后的 URL（未转义）；
-        - campaignId / adId / listingId: 广告投放相关 ID；
-        - cpc: 点击成本（高精度）；
-        - advertiserId: 广告主 ID；
-        - domainType: 广告类型（例如 1 代表页面跳转类）；
-        - searchQuery: 用户搜索的关键词；
-        - decodedParams: 解析出的参数全集；
+        - originalUrl: The original Bing ad redirect URL.
+        - destinationUrl: The decoded RLink destination URL (not escaped).
+        - campaignId / adId / listingId: IDs related to the ad campaign.
+        - cpc: Cost per click (high precision).
+        - advertiserId: The advertiser’s ID.
+        - domainType: Type of the landing page (e.g., 1 means redirect-type page).
+        - searchQuery: The user's search query.
+        - decodedParams: Full set of decoded parameters.
 
         ---
 
-        📌 **你的任务：**
+        📌 **Your Task:**
 
-        1️⃣ 判断落地页是否为合理电商页或诱导页；
-        2️⃣ 提取 search_query 与落地页之间的相关性；
-        3️⃣ 简要描述广告所属行业（如电商、下载类、导流页等）；
-      `.trim();
+        1️⃣ Determine whether the landing page is a legitimate e-commerce page or a misleading/inducing one;  
+        2️⃣ Analyze the relevance between the searchQuery and the landing page content;  
+        3️⃣ Briefly describe the ad’s industry category (e.g., e-commerce, downloads, traffic redirection, etc.).
+      `
+        .trim()
+        .replace(/\s+/g, ' ');
 
       const structuredContent = {
         originalUrl: args.url,

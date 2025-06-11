@@ -1,13 +1,13 @@
 {
-  "generate_aqp_search_prompt": {
-    "name": "generate_aqp_search_prompt",
-    "description": "必须在调用 'aqp_search' 工具前调用本工具。它会分析用户自然语言输入，提取广告搜索 query、model 和参数，构造成结构化参数供 'aqp_search' 使用。",
+  "extract_aqp_params": {
+    "name": "extract_aqp_params",
+    "description": "[aqp-mcp-server] ⚠️ This tool must be called first to extract ad query parameters (query, model, params) from the user's natural language input. The extracted parameters are required by the 'aqp_search' tool.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "userInput": {
           "type": "string",
-          "description": "用户输入的自然语言文本"
+          "description": "The user's natural language input text"
         }
       },
       "required": ["userInput"]
@@ -15,21 +15,21 @@
   },
   "aqp_search": {
     "name": "aqp_search",
-    "description": "根据结构化的广告查询参数（query, model, params）执行广告搜索。⚠️ 注意：调用本工具之前，必须先调用 'generate_aqp_search_prompt' 工具，从用户的自然语言中提取参数。不要在没有参数准备的情况下调用本工具。",
+    "description": "[aqp-mcp-server] Executes an ad search using structured parameters. ⚠️ This tool must be called only after extracting parameters (query, model, params). Do not call this tool with raw natural language input.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "model": {
           "type": "string",
-          "description": "广告搜索模式，例如 ta、pa、msan"
+          "description": "Ad search mode, e.g., ta, pa, msan"
         },
         "query": {
           "type": "string",
-          "description": "广告搜索关键词"
+          "description": "Ad search keyword"
         },
         "params": {
           "type": "array",
-          "description": "广告查询参数数组（可选）",
+          "description": "Optional array of ad query parameters",
           "items": {
             "type": "object",
             "properties": {
@@ -44,9 +44,23 @@
       "required": ["model", "query"]
     }
   },
+  "filter_and_project_ads": {
+    "name": "filter_and_project_ads",
+    "description": "[aqp-mcp-server] Filter and extract custom fields from previously retrieved ad data. Use this tool when the user asks to display or analyze specific fields (e.g. adId, listingId, or specific pClickScore values).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "string",
+          "description": "A JavaScript arrow function expression to transform an ad item, e.g., '(ad) => ({ adid: ad.adid, hastype2: ad.pclickscore?.some(p => p.pclickscoretype == 2) })'"
+        }
+      },
+      "required": ["expression"]
+    }
+  },
   "decode_bingads_url": {
     "name": "decode_bingads_url",
-    "description": "Decodes a full Bing Ads redirect URL (typically an rlink) to extract the final landing page, ad metadata, and user search intent.",
+    "description": "[aqp-mcp-server] Decodes a full Bing Ads redirect URL (typically an rlink) to extract the final landing page, ad metadata, and user search intent.",
     "inputSchema": {
       "type": "object",
       "properties": {

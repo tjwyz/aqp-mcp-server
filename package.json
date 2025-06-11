@@ -33,13 +33,16 @@
     "yaml": "^2.7.0"
   },
   "devDependencies": {
+    "@types/content-type": "^1.1.9",
     "@types/jest": "^29.5.14",
     "@types/jwt-decode": "^2.2.1",
     "@types/node": "^22.13.10",
+    "content-type": "^1.0.5",
     "cpx": "^1.5.0",
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "prettier": "^3.5.3",
+    "raw-body": "^3.0.0",
     "ts-jest": "^29.2.5",
     "typescript": "^4.5.0"
   },

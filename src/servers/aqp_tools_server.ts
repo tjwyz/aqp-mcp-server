@@ -15,7 +15,7 @@ export class AQPToolsServer extends BaseServer {
   private aqpHandler: AQPHandler;
 
   constructor() {
-    super('aqp-tools', aqpTools, 'aqp_tools_server');
+    super('aqp-mcp-server', aqpTools, 'aqp-mcp-server');
     this.aqpHandler = new AQPHandler();
   }
 
@@ -24,9 +24,14 @@ export class AQPToolsServer extends BaseServer {
     console.log('AQP tools handlers initialized successfully');
   }
 
-  protected async handleToolCall(name: string, args: any, config: TransportConfig) {
+  protected async handleToolCall(
+    name: string,
+    args: any,
+    config: TransportConfig,
+    sessionId: string,
+  ) {
     switch (name) {
-      case 'generate_aqp_search_prompt': {
+      case 'extract_aqp_params': {
         if (!args || typeof args.userInput !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, "Invalid or missing 'userInput' parameter");
         }
@@ -44,7 +49,16 @@ export class AQPToolsServer extends BaseServer {
           throw new McpError(ErrorCode.InvalidParams, "'params' must be an array if provided");
         }
 
-        return await this.aqpHandler.aqpSearch(args, config);
+        return await this.aqpHandler.aqpSearch(args, config, sessionId);
+      }
+      case 'filter_and_project_ads': {
+        const { expression } = args || {};
+
+        if (!expression || typeof expression !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, "Missing required 'expression' parameter");
+        }
+
+        return await this.aqpHandler.filterAndProjectAds({ expression }, config, sessionId);
       }
       case 'decode_bingads_url': {
         if (!args || typeof args.url !== 'string') {

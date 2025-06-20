@@ -22,7 +22,7 @@ function generatePKCE() {
 async function exchangeCodeForToken(code: string, code_verifier: string): Promise<string | null> {
   const tenantId = '72f988bf-86f1-41af-91ab-2d7cd011db47';
   const clientId = '4b03b804-7fc8-43e2-a31d-263d422949e9';
-  const redirectUri = 'http://localhost:44330/oauthcallback';
+  const redirectUri = 'http://localhost:3000/oauthcallback';
   const tokenEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
 
   const params = new URLSearchParams();
@@ -94,7 +94,7 @@ export async function getUserToken(config: TransportConfig): Promise<string | nu
   const tenantId = '72f988bf-86f1-41af-91ab-2d7cd011db47';
   const clientId = '4b03b804-7fc8-43e2-a31d-263d422949e9';
   const scope = `${clientId}/.default`;
-  const redirectUri = 'http://localhost:44330/oauthcallback';
+  const redirectUri = 'http://localhost:3000/oauthcallback';
 
   const authorizeUrl =
     `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize` +

@@ -1,7 +1,7 @@
 {
   "name": "aqp-mcp-server",
-  "version": "1.0.1",
-  "description": "<!--=========================README TEMPLATE INSTRUCTIONS=============================\r ======================================================================================",
+  "version": "1.0.2",
+  "description": "aqp-mcp-server",
   "main": "build/index.js",
   "scripts": {
     "build": "tsc && cpx \"src/schemas/**/*\" build/schemas",

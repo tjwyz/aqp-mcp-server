@@ -1,6 +1,6 @@
 {
   "name": "aqp-mcp-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "aqp-mcp-server",
   "main": "build/index.js",
   "scripts": {
@@ -47,7 +47,7 @@
     "typescript": "^4.5.0"
   },
   "bin": {
-    "aqp-tools": "build/servers/aqp_tools_server.js"
+    "aqp-mcp-server": "build/servers/aqp_tools_server.js"
   },
   "files": [
     "build/",

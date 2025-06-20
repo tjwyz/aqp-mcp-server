@@ -1,6 +1,6 @@
 {
   "name": "aqp-mcp-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "aqp-mcp-server",
   "main": "build/index.js",
   "scripts": {

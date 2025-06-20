@@ -200,7 +200,7 @@ export class AQPHandler {
       adservicelen: adservice.length,
       adspluslen: adsplus.length,
       schema,
-      downloadurl: `http://aqpmcp.eastus.cloudapp.azure.com:3000/json?id=${sessionId}`,
+      downloadurl: `http://localhost:3000/json?id=${sessionId}`,
     };
 
     const inputForLLM = `${prompt}\n\nJSON:\n${JSON.stringify(structuredContent)}`;
